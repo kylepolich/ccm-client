@@ -15,6 +15,8 @@ import shutil
 
 __location__ = os.path.dirname(__file__)
 
+sys.path.insert(0, os.path.abspath('..'))
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -34,7 +36,7 @@ except ImportError:
     from sphinx import apidoc
 
 output_dir = os.path.join(__location__, "api")
-module_dir = os.path.join(__location__, "../src/ccm_client")
+module_dir = os.path.join(__location__, "../src/ccm")
 try:
     shutil.rmtree(output_dir)
 except FileNotFoundError:
@@ -88,7 +90,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "ccm-client"
-copyright = "2022, Kyle Polich"
+copyright = "2022, Atlas"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -99,7 +101,7 @@ copyright = "2022, Kyle Polich"
 # If you don’t need the separation provided between version and release,
 # just set them both to the same value.
 try:
-    from ccm_client import __version__ as version
+    from ccm import __version__ as version
 except ImportError:
     version = ""
 
@@ -246,7 +248,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ("index", "user_guide.tex", "ccm-client Documentation", "Kyle Polich", "manual")
+    ("index", "user_guide.tex", "CCM Client Documentation", "Atlas Space Operations", "manual")
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

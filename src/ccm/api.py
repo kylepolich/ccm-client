@@ -14,9 +14,11 @@ _logger = logging.getLogger(__name__)
 
 
 class CcmApi(object):
+    "CCM API is great"
 
 
     def __init__(self, user_id, api_host=None):
+        """When initializing this helper object, provide the `user_id` assigned to you when you were granted access to CCM."""
         # TODO: authentication
         self.user_id = user_id
         if api_host is None:
@@ -32,25 +34,67 @@ class CcmApi(object):
 
 
     def get_version(self):
+        """Get the version information for the client you are running.
+
+        :return: A version identifier
+        :rtype: string
+        """
         return "v1.0.0"
 
 
+    def get_server_version(self):
+        r = request.get(self.api_host)
+        return {
+            "version": "v1.0.0"
+        }
+
+
     def get_api_host(self):
+        """Get the CCM Server API base endpoint the client is communicating with.  This is useful for confirming if you are pointing to a test or production server."""
         return self.api_host
 
 
     def get_current_profile(self):
+        """New users are assigned to the 'default' profile.  Users can add additional preference profiles and switch between them (with other methods of this class).  This function retrieves the currently selected profile."""
         return self.current_profile
 
 
-    def get_schedule_by_id(self, id: str) -> objs.Schedule:
+    def get_all_profiles(self):
+        return []
+
+
+    def get_user_preferences(self, profile_name='default') -> list:
+        """Retrieve a list of UserPreference objects applicable to the current user."""
+        return []
+
+
+    def get_schedule_by_id(self, schedule_id: str) -> objs.Schedule:
+        """Retrieve a schedule from the API by id.
+
+        :param schedule_id: The unique identifier issued by the server.
+        :raises Exception: No schedule by that ID.
+        :return: A Schedule object
+        :rtype: Schedule
+        """
         if id == 'empty':
             return objs.Schedule()
         else:
             raise Exception('No schedule by that ID')
 
 
-    def create_user_preference(self, constraint_type: objs.UserPreference.ConstraintType, objective: objs.UserPreference.Objective, **kwargs):
+    def get_ground_sites(self):
+        """Retrieve a list of the Ground Sites available in the network which the client can request usage of."""
+        return []
+
+
+    def create_exact_request(self, norad_id: str, ground_site_id: str, start_timestamp: int, end_timestamp: int):
+        return {
+            'success': False,
+            'msg': 'Not available'
+        }
+
+
+    def generate_user_preference(self, constraint_type: objs.UserPreference.ConstraintType, objective: objs.UserPreference.Objective, **kwargs):
         if constraint_type == objs.UserPreference.ConstraintType.TruncatedGaussian:
             for req in ['mu', 'sigma']:
                 if req not in kwargs:

@@ -36,11 +36,11 @@ def test_get_schedule_success():
     assert type(sch) == objs.Schedule
 
 
-def test_create_user_preference():
+def test_generate_user_preference():
     ct = objs.UserPreference.ConstraintType.TruncatedGaussian
     objective = objs.UserPreference.Objective.ContactMinutesPerDay
     ca = CcmApi('test')
-    up = ca.create_user_preference(ct, objective, mu=10, sigma=5)
+    up = ca.generate_user_preference(ct, objective, mu=10, sigma=5)
     assert type(up) == objs.UserPreference
 
 
@@ -86,7 +86,7 @@ def test_profile():
     assert resp['success']
     ct = objs.UserPreference.ConstraintType.TruncatedGaussian
     objective = objs.UserPreference.Objective.ContactMinutesPerDay
-    up = ca.create_user_preference(ct, objective, mu=10, sigma=5)
+    up = ca.generate_user_preference(ct, objective, mu=10, sigma=5)
     resp = ca.add_preference_to_profile('temp', up)
     assert resp['success']
     resp = ca.delete_profile('temp')
