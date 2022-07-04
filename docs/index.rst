@@ -23,9 +23,11 @@ There are several operations a client may want to execute via the API:
 
 Each of these operations is described in detail (with code examples) in the sections that follow.
 
+.. include ./license.rst
 
 
-Wierd placeholder
+==================
+Using Client
 ==================
 
 
@@ -42,7 +44,11 @@ To get started, you will need:
 
 It is recommended that you place your **USER_ACCESS_TOKEN** in an environmental variable (or .env file), but it can also be passed as a parameter to the `CcmApi` class.
 
-The code snippet below is useful for verifying your local setup::
+The code snippet below is useful for verifying your local setup.
+
+.. code-block:: python
+    :caption: Verify your version and server connection
+    :linenos:
 
 	from src.ccm.api import CcmApi
 
@@ -50,8 +56,15 @@ The code snippet below is useful for verifying your local setup::
     client_version = client.get_version()
     server_version = client.get_server_version()
     preference_profile = client.get_current_profile()
-    print(client_version, server_version, preference_profile)
+    resp = {
+        'client_version': client_version,
+        'server_version': server_version,
+        'preference_profile': preference_profile
+    }
+    print(resp)
 
+
+.. literalinclude:: outputs/verify.json
 
 The above snippet runs three lookup methods and prints the results of each.
 
@@ -76,18 +89,66 @@ TODO: explain and reference the schedule.proto as a hyperlink
 Submitting an Exact Request
 ---------------------------
 
-Traditional approaches to scheduling often involve placing the cognitive burden on the end user to select a particular Visibility they want to utilize for communication.  An **exact request** like this prevents CCM from assisting with any automated triaging should the chosen Visibility not be available.  However, to provide robust client support, a legacy style exact request can be submitted in the following way::
+Traditional approaches to scheduling often involve placing the cognitive burden on the end user to select a particular Visibility they want to utilize for communication.  An **exact request** like this prevents CCM from assisting with any automated triaging should the chosen Visibility not be available.  However, to provide robust client support, a legacy style exact request can be submitted in the following way.
+
+.. code-block:: python
+    :caption: Submit an Exact Request
+    :linenos:
 
 	from datetime import datetime
 	from src.ccm.api import CcmApi
 
     client = CcmApi('my user id')
-    norad_id = '12345'
+    norad_id = 'test'
     ground_site_id = 's1'
-    start_timestamp = datetime.fromtimestamp(2022, 1, 1, 11, 50, 0).timestamp()
-    end_timestamp   = datetime.fromtimestamp(2022, 1, 1, 11, 50, 5).timestamp()
+    start_timestamp = int(datetime.fromtimestamp(2022, 1, 1, 11, 50, 0).timestamp())
+    end_timestamp   = int(datetime.fromtimestamp(2022, 1, 1, 11, 50, 5).timestamp())
     r = client.create_exact_request(norad_id, ground_site_id, start_timestamp, end_timestamp)
     assert r['success']
+    print(r)
+
+
+.. literalinclude:: outputs/create_exact_request.json
+
+
+Retrieving Schedules
+--------------------
+
+Every run of CCM creates a new unique `schedule_id` representing the most up-to-date version of the future schedule for the network *at the time* of it's generation.  Typically, a `schedule_id` is a random string.
+
+Note
+    The Schedule returned will include only Tasking data for the requesting user.  A single user can operate many Spacecraft via the API under a single user account.  Tasks assigned to other users will not be visible in the response.
+
+As a convenience, you may set `schedule_id='latest'` to retrieve the latest Schedule at any given time.  Unlike all other values of `schedule_id`, the value of `latest` is not immutable.  It will change to reflect the current schedule.
+
+.. code-block:: python
+    :caption: Retrieving the latest Schedule
+    :linenos:
+
+    from src.ccm.api import CcmApi
+
+    client = CcmApi('my user id')
+    schedule_id = 'latest'
+    resp = client.get_schedule_by_id(schedule_id)
+    sch = resp['schedule']
+
+In the previous section, a demonstration was provided that updated User Preferences.  An inspection of the response would reveal it contains a `next_schedule_id`.  Querying immediately for this value will likely result in a failure.  CCM recalculates schedules on a regular time interval.  When the next recalculation begins, it will reflect the updated User Preferences.  When the calculation of that future schedule is completed, it will be assign the provided identifier value.
+
+The code snippet below demonstrates the use of polling when retreving
+
+.. code-block:: python
+    :caption: Retrieving a specific Schedule
+    :linenos:
+
+    from src.ccm.api import CcmApi
+
+    client = CcmApi('my user id')
+    schedule_id = 'server_provided_next_schedule_id_value'
+    resp = client.get_schedule_by_id(schedule_id)
+    while not(resp['ready']):
+        time.sleep(60)
+        resp = client.get_schedule_by_id(schedule_id)
+    sch = resp['schedule']
 
 
 Working with User Preferences
@@ -95,7 +156,9 @@ Working with User Preferences
 
 A key data structure in CCM relies on to understand client goals is the User Preference object.  The snippet below provides a demonstration of how to create such an object.  Note that the `upref` created is only a temporary object.  The `generate_user_preference` only helps with the creation of this object.  After completing this step, we will demonstrate saving.
 
-How to generate a new User Preference object::
+How to generate a new User Preference object
+
+.. code-block:: python
 
 	from src.ccm.api import CcmApi
 	from src import schedule_pb2 as objs
@@ -107,7 +170,9 @@ How to generate a new User Preference object::
     assert type(upref) == objs.UserPreference
 
 
-Saving that object to the `default` Preference Profile::
+Saving that object to the `default` Preference Profile
+
+.. code-block:: python
 
     profile_name = 'default'
     upref = client.generate_user_preference(tgauss, min_per_day, mu=60, sigma=10, min=45, max=120)
@@ -115,58 +180,31 @@ Saving that object to the `default` Preference Profile::
     assert r['success']
 
 
-How to retrieve all preferences::
+How to retrieve all preferences
+
+.. code-block:: python
 
 	uprefs = client.get_user_preferences()
 	for pref in uprefs:
 		print(pref.objective, pref.constraint_type)
 
 
-Retrieving Schedules
---------------------
-
-Every run of CCM creates a new unique `schedule_id` representing the most up-to-date version of the future schedule for the network *at the time* of it's generation.  Typically, a `schedule_id` is a random string.
-
-Note
-	The Schedule returned will include only Tasking data for the requesting user.  A single user can operate many Spacecraft via the API under a single user account.  Tasks assigned to other users will not be visible in the response.
-
-As a convenience, you may set `schedule_id='latest'` to retrieve the latest Schedule at any given time.  Unlike all other values of `schedule_id`, the value of `latest` is not immutable.  It will change to reflect the current schedule.
-
-Retrieving the latest Schedule::
-
-	from src.ccm.api import CcmApi
-
-    client = CcmApi('my user id')
-    schedule_id = 'latest'
-    resp = client.get_schedule_by_id(schedule_id)
-	sch = resp['schedule']
-
-In the previous section, a demonstration was provided that updated User Preferences.  An inspection of the response would reveal it contains a `next_schedule_id`.  Querying immediately for this value will likely result in a failure.  CCM recalculates schedules on a regular time interval.  When the next recalculation begins, it will reflect the updated User Preferences.  When the calculation of that future schedule is completed, it will be assign the provided identifier value.
-
-The code snippet below demonstrates the use of polling when retreving::
-
-	from src.ccm.api import CcmApi
-
-    client = CcmApi('my user id')
-    schedule_id = 'server_provided_next_schedule_id_value'
-    resp = client.get_schedule_by_id(schedule_id)
-    while not(resp['ready']):
-    	time.sleep(60)
-	    resp = client.get_schedule_by_id(schedule_id)
-	sch = resp['schedule']
-
 
 Using Preference Profiles
 -------------------------
 
-List all Preference Profiles::
+List all Preference Profiles
+
+.. code-block:: python
 
 	profiles = client.get_all_profiles()
 	for profile in profiles:
 		print(profile.name)
 
 
-How to create a Preference Preference::
+How to create a Preference Preference
+
+.. code-block:: python
 
 	from src.ccm.api import CcmApi
 
@@ -175,7 +213,9 @@ How to create a Preference Preference::
 	assert resp['success']
 
 
-How to change a Preference Profile::
+How to change a Preference Profile
+
+.. code-block:: python
 
     profile_name = 'my new profile'
     _ = client.add_preference_to_profile(profile_name, upref)
@@ -209,7 +249,7 @@ delete a pref from a profile
 .. Getting metrics in real time with MQTT
 
 
-
+.. include:: source/src.ccm.rst
 
 
 .. Indices and tables

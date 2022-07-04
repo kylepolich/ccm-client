@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import requests
 import sys
 
 from src.ccm import __version__
@@ -43,7 +44,7 @@ class CcmApi(object):
 
 
     def get_server_version(self):
-        r = request.get(self.api_host)
+        r = requests.get(self.api_host)
         return {
             "version": "v1.0.0"
         }
@@ -88,6 +89,11 @@ class CcmApi(object):
 
 
     def create_exact_request(self, norad_id: str, ground_site_id: str, start_timestamp: int, end_timestamp: int):
+        if norad_id == 'test':
+            return {
+                'success': True,
+                'next_schedule_id': 'example'
+            }
         return {
             'success': False,
             'msg': 'Not available'
