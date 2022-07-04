@@ -4,6 +4,7 @@ import os
 import random
 import requests
 import sys
+import time
 
 from src.ccm import __version__
 from src import schedule_pb2 as objs
@@ -80,12 +81,12 @@ class CcmApi(object):
         """
         if schedule_id == 'empty':
             return objs.Schedule()
-        elif schedule_id == 'example':
+        elif schedule_id == 'example':  
             tasks = []
             norad_id = '55555'
             vid = random.randint(1000,2000)
             tid = random.randint(100,200)
-            for i in range(5):
+            for i in range(2):
                 s = int(time.time()) + int(random.random() * 60)
                 dur = 5 * 60
                 vid += 1
@@ -94,15 +95,14 @@ class CcmApi(object):
                     taskId=f't{tid}',
                     userId=self.user_id,
                     start=s,
-                    end=start+dur,
-                    visibilityId=vid,
+                    end=s+dur,
+                    visibilityId=str(vid),
                     noradId=norad_id,
                     siteId='site-a'
                 )
                 tasks.append(task)
-            tasks = [task1, task2]
             return objs.Schedule(
-                scheduleRunId=1,
+                scheduleRunId='example-run-id',
                 tasks=tasks,
                 score=1.0 # TODO: should we even expose this?
             )

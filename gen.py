@@ -1,5 +1,6 @@
 from src.ccm.api import CcmApi
 from docs.outsrc.verify import get_results as verify_get_results
+from google.protobuf.json_format import MessageToDict
 import json
 
 
@@ -20,8 +21,9 @@ def create_exact_request(client):
 def create_schedule_request(client):
     resp = client.get_schedule_by_id('example')
     fn = 'docs/outputs/create_schedule_request.json'
-    json.dump(resp, open(fn, 'w'), indent=4, sort_keys=True)
-    
+    o = MessageToDict(resp, preserving_proto_field_name=True)
+    json.dump(o, open(fn, 'w'), indent=4, sort_keys=True)
+
 
 
 client = CcmApi('test')

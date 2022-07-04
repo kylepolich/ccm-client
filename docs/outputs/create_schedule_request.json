@@ -1,0 +1,24 @@
+{
+    "scheduleRunId": "example-run-id",
+    "score": 1.0,
+    "tasks": [
+        {
+            "end": "1656976657",
+            "noradId": "55555",
+            "siteId": "site-a",
+            "start": "1656976357",
+            "taskId": "t116",
+            "userId": "test",
+            "visibilityId": "1190"
+        },
+        {
+            "end": "1656976675",
+            "noradId": "55555",
+            "siteId": "site-a",
+            "start": "1656976375",
+            "taskId": "t117",
+            "userId": "test",
+            "visibilityId": "1191"
+        }
+    ]
+}

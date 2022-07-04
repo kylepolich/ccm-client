@@ -157,13 +157,18 @@ The code snippet below demonstrates the use of polling when retreving
         resp = client.get_schedule_by_id(schedule_id)
     sch = resp['schedule']
 
+.. literalinclude:: outputs/create_schedule_request.json
 
 Working with User Preferences
 -----------------------------
 
 A key data structure in CCM relies on to understand client goals is the User Preference object.  The snippet below provides a demonstration of how to create such an object.  Note that the `upref` created is only a temporary object.  The `generate_user_preference` only helps with the creation of this object.  After completing this step, we will demonstrate saving.
 
-.. image:: docs/imgs/constraint-decay.png
+.. image:: imgs/constraint-type-gaussian.png
+
+.. image:: imgs/constraint-type-logistic.png
+
+.. image:: imgs/constraint-type-decay.png
 
 .. code-block:: python
     :caption: How to generate a new User Preference object
@@ -267,3 +272,6 @@ delete a pref from a profile
 .. * :ref:`genindex`
 .. * :ref:`modindex`
 .. * :ref:`search`
+
+
+.. aoi ignore, lockout, minimize
