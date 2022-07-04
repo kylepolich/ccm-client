@@ -93,6 +93,15 @@ def test_profile():
     assert resp['success']
 
 
+def test_create_exact_request_has_mock():
+    ca = CcmApi('test')
+    s = 0
+    e = 60*5
+    resp = ca.create_exact_request('test' '12345', s, e)
+    assert resp['success']
+    assert 'next_schedule_id' in resp
+
+
 # def test_
 #     TODO: check on the schedule after submitting a change
 #     resp = ca.update()
