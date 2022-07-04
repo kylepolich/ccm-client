@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import random
 import sys
 
 from src.ccm import __version__
@@ -76,8 +77,34 @@ class CcmApi(object):
         :return: A Schedule object
         :rtype: Schedule
         """
-        if id == 'empty':
+        if schedule_id == 'empty':
             return objs.Schedule()
+        elif schedule_id == 'example':
+            tasks = []
+            norad_id = '55555'
+            vid = random.randint(1000,2000)
+            tid = random.randint(100,200)
+            for i in range(5):
+                s = int(time.time()) + int(random.random() * 60)
+                dur = 5 * 60
+                vid += 1
+                tid += 1
+                task = objs.ScheduledTask(
+                    taskId=f't{tid}',
+                    userId=self.user_id,
+                    start=s,
+                    end=start+dur,
+                    visibilityId=vid,
+                    noradId=norad_id,
+                    siteId='site-a'
+                )
+                tasks.append(task)
+            tasks = [task1, task2]
+            return objs.Schedule(
+                scheduleRunId=1,
+                tasks=tasks,
+                score=1.0 # TODO: should we even expose this?
+            )
         else:
             raise Exception('No schedule by that ID')
 
@@ -95,11 +122,32 @@ class CcmApi(object):
 
 
     def generate_user_preference(self, constraint_type: objs.UserPreference.ConstraintType, objective: objs.UserPreference.Objective, **kwargs):
+        """Helper function for creating a UserPreference Object.
+
+        :param constraint_type: TruncatedGaussian, Logistic, Decay
+        :type constraint_type: UserPreference.ConstraintType
+        :param objective: See UserPreference.Objective
+        :type objective: UserPreference.Objective
+        :param weight: A value representing how much emphasis to give to this UserPreference relative to others.
+        :type weight: float
+        :param mu: For TruncatedGaussian(, optional)
+        :type mu: float
+        :param sigma: For TruncatedGaussian(, optional)
+        :type sigma: float
+        :param min: For TruncatedGaussian(, optional)
+        :type min: float
+        :param max: For TruncatedGaussian(, optional)
+        :type max: float
+        :return: A validated UserPreference object
+        :rtype: UserPreference
+        """
         if constraint_type == objs.UserPreference.ConstraintType.TruncatedGaussian:
             for req in ['mu', 'sigma']:
                 if req not in kwargs:
                     raise Exception(f'Gaussian Requires {req}')
         up = objs.UserPreference(
+            userId=self.user_id,
+            tier=1,
             constraintType=constraint_type,
             objective=objective
         )
@@ -121,15 +169,7 @@ class CcmApi(object):
         #         AoiLatency                    = 15;
         #     }
 
-        #     required ConstraintType constraintType = 1;
-        #     required Objective objective = 2;
-        #     optional string userId = 4;
         #     optional string label = 5;
-
-        #     optional double mu = 6;
-        #     optional double sigma = 7;
-        #     optional double min = 8;
-        #     optional double max = 9;
 
         #     optional double start = 10;
         #     optional double decayBegins = 11;
@@ -138,10 +178,6 @@ class CcmApi(object):
 
         #     optional double bias = 13;
         #     optional double shape = 14;
-
-        #     optional double weight = 15 [default = 1.0];
-
-        #     required int32 tier = 16 [default = 1];
 
         #     optional int64 start_time = 17;
         #     optional int64 end_time = 18;
