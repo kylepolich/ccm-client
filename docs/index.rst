@@ -77,7 +77,14 @@ The above snippet runs three lookup methods and prints the results of each.
 Installing the Python Library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-TODO: Ok to add to pypi?
+.. TODO: Ok to add to pypi?
+
+
+
+```
+git clone https://github.com/atlas/ccm-client.git
+```
+
 
 Using Protobuf Objects
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -156,9 +163,11 @@ Working with User Preferences
 
 A key data structure in CCM relies on to understand client goals is the User Preference object.  The snippet below provides a demonstration of how to create such an object.  Note that the `upref` created is only a temporary object.  The `generate_user_preference` only helps with the creation of this object.  After completing this step, we will demonstrate saving.
 
-How to generate a new User Preference object
+.. image:: docs/imgs/constraint-decay.png
 
 .. code-block:: python
+    :caption: How to generate a new User Preference object
+    :linenos:
 
 	from src.ccm.api import CcmApi
 	from src import schedule_pb2 as objs
