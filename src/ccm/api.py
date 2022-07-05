@@ -102,7 +102,7 @@ class CcmApi(object):
                 )
                 tasks.append(task)
             return objs.Schedule(
-                scheduleRunId='example-run-id',
+                scheduleRunId=schedule_id,
                 tasks=tasks,
                 score=1.0 # TODO: should we even expose this?
             )

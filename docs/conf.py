@@ -36,7 +36,7 @@ except ImportError:
     from sphinx import apidoc
 
 output_dir = os.path.join(__location__, "api")
-module_dir = os.path.join(__location__, "../src/ccm")
+module_dir = os.path.join(__location__, "../src")
 try:
     shutil.rmtree(output_dir)
 except FileNotFoundError:
@@ -101,9 +101,10 @@ copyright = "2022, Atlas"
 # If you don’t need the separation provided between version and release,
 # just set them both to the same value.
 try:
-    from ccm import __version__ as version
+    from ccm.__version__ import get_version
+    version = get_version()
 except ImportError:
-    version = ""
+    version = "missing"
 
 if not version or version.lower() == "unknown":
     version = os.getenv("READTHEDOCS_VERSION", "unknown")  # automatically set by RTD
