@@ -27,13 +27,14 @@ There are several operations a client may want to execute via the API:
 
 Each of these operations is described in detail (with code examples) in the sections that follow.
 
-TODO: you did it in freedom
-TODO: assumes visibilities and sats
-TODO: assumes knowledge of sites
+A keen reader may notice that the CCM API *does not* provide support for any of the following actions:
 
-TODO: data comes from freedom
-TODO: freedom software produces input
-TODO: outside the scope of CCM, but mandatory req to run
+#. Add a new Spacecraft (i.e. unique ``norad_id``) to the system
+
+#. Add a new Ground Site
+
+#. Update Visibilities
+
 
 **Atlas Freedom Integration**
 
@@ -89,7 +90,14 @@ The above snippet runs three lookup methods and prints the results of each.
 Installing the Python Library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-TODO: talk about intallation and using
+To leverage the Python helper library described in this document, there are serveral options for installation.  To install the library locally so that you can import it into your code, use the command shown below.
+
+.. code-block:: bash
+
+    pip install -e https://github.com/atlas/ccm-client.git
+
+
+To clone the repository's source code directly, use the command below.
 
 .. code-block:: bash
 
@@ -99,9 +107,9 @@ TODO: talk about intallation and using
 Using Protobuf Objects
 ^^^^^^^^^^^^^^^^^^^^^^
 
-CCM leverages `Protocol Buffers <https://developers.google.com/protocol-buffers>` (aka ``protobuf``) to define a polyglot schema of the objects sent to and returned from CCM.
+CCM leverages `Protocol Buffers <https://developers.google.com/protocol-buffers>` (aka ``protobuf``) to define a polyglot schema of the objects sent to and returned from CCM.  Several of the functions provided by the library return Protobuf objects.
 
-TODO: explain and reference the schedule.proto as a hyperlink
+To answer schema related questions about the objects returned, we recommend you refer directly to the ``schedule.proto`` object definition file.
 
 
 
@@ -215,11 +223,13 @@ The most popular Objective function is the *Truncated Gaussian*.  It is visualiz
 Logistic Preference
 ^^^^^^^^^^^^^^^^^^^
 
+The Logistic Preference requres two parameters: ``bias`` and ``shape``.  We recommend readers review the `Logistic function <https://en.wikipedia.org/wiki/Logistic_function>` wikipedia page to ensure you have sufficient background in the mathematical definition of the Logistic function.  In their documentation, *L = bias* and *k = shape*.
+
+This Objective shape is commonly choosen to express a "soft max" constraint in which the user would be happy to get an unlimited amount of some value (e.g. Minutes per Day), but finds diminishing returns after a certain point.
+
 .. image:: imgs/constraint-type-logistic.png
     :scale: 50%
     :align: center
-
-TODO: explain Logistic
 
 .. code-block:: python
     :caption: How to generate a new Logistic User Preference object
@@ -240,11 +250,11 @@ TODO: explain Logistic
 Decay Preference
 ^^^^^^^^^^^^^^^^
 
+There are some situations in which a satellite operator may be open to accepting any values in a certain range, followed by a steep decline in utility after the range has ended.  To capture preferences of this nature, we offer the Decay Preference which is illustrated in the image below.  The ``start`` parameter defines the lowest value for which the metric is acceptable.  The ``decayBegins`` must be greater than or equal to ``start``, and represents the time at which the appear of values begins to decline.  The ``lambdaParam`` is used as a decay parameter which describes the decline in perceived value as the observed value continues to increase up until ``decayHorizon``, beyond which all observed values have no value.
+
 .. image:: imgs/constraint-type-decay.png
     :scale: 50%
     :align: center
-
-TODO: show decay
 
 .. code-block:: python
     :caption: How to generate a new Decay User Preference object
@@ -260,10 +270,13 @@ TODO: show decay
     assert type(decay_upref) == objs.UserPreference
 
 
-TODO: narrative and save profile
+Saving User Preferences to Profiles
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The previous three sections defined unique variables ending in ``_upref`` which collectively may fully describe the mission goals of a particular user.  They can be saved to a common Preference Profile (the *default* profile in the example below) via the ``add_preference_to_profile`` function.
 
 .. code-block:: python
-    :caption: Saving that objects generated above to the `default` Preference Profile
+    :caption: Saving that objects generated above to the `default` Profile
     :linenos:
 
     profile_name = 'default'
@@ -279,10 +292,12 @@ TODO: narrative and save profile
 Using Preference Profiles
 -------------------------
 
+A *Preference Profile* is a user defined collection of User Preference objects.  By default, all CCM users have a *default* Preference Profile.  Users can create alternate Preference Profiles and add unique User Preferences to them.  Should mission objectives change, the use can elect to change their active profile to one of their custom Preference Profiles.  Once a change has been submitted to the API (as demonstrated below), the next Schedule generated will reflect the User Preferences in the newly activated profile.  Should a user choose to take advantage of having more Preference Profiles, this section covers the process of creating, listing, updating, activating, and removing Preference Profiles.
+
 Create a Preference Profile
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-TODO: narrative about pref profiles
+The code snippet below demonstrates the process for creating a Preference Profile which will be identified with the unique name ``my new profile``.
 
 .. code-block:: python
     :caption: How to create a Preference Preference
@@ -295,10 +310,48 @@ TODO: narrative about pref profiles
     assert resp['success']
 
 
+Update a Preference Profile
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Once a Preference Profile is created, new User Preference can be generated and added to it.
+
+.. code-block:: python
+    :caption: How to create a Preference Preference
+    :linenos:
+
+    from src.ccm.api import CcmApi
+    from src import schedule_pb2 as objs
+    
+    tgauss = objs.UserPreference.ConstraintType.TruncatedGaussian
+    min_per_day = objs.UserPreference.Objective.ContactCountPerDay
+    client = CcmApi('my user id')
+    tgauss_upref = client.generate_user_preference(tgauss, min_per_day, mu=5, sigma=2, min=0, max=20)
+    profile_name = 'my new profile'
+    r = client.add_preference_to_profile(profile_name, tgauss_upref)
+    assert r['success']
+
+
+Activating a Preference Profile
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A CCM user always has an active Preference Profile which begins as *default*.  The active Preference Profile cannot be deleted.  Users can change which profile is active at any time.
+
+.. code-block:: python
+    :caption: How to change a Preference Profile
+    :linenos:
+
+    profile_name = 'my new profile'
+    resp = client.set_profile(profile_name)
+    assert r['success']
+    assert 'next_schedule_id' in r
+
+Since a change in profile is likely to result in a new set of Task assignments, CCM will return a ``next_schedule_id`` in the response which indicates the next Schedule which will reflect the newly activated profile.
+
+
 Retrieve All Preference Profiles
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-TODO: narrative
+To get a list of all the created Preference Profiles, follow the example shown below.
 
 .. code-block:: python
     :caption: How to retrieve all preferences
@@ -306,38 +359,31 @@ TODO: narrative
 
 	profiles = client.get_all_profiles()
 	for profile in profiles:
-		print(profile.name)
-
-
-Update the Active Preference Profile
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-TODO: narrative
-
-.. code-block:: python
-    :caption: How to change a Preference Profile
-    :linenos:
-
-    profile_name = 'my new profile'
-    _ = client.add_preference_to_profile(profile_name, upref)
-    upref = client.generate_user_preference(tgauss, min_per_day, mu=60, sigma=10, min=45, max=120)
-
-TODO: response with new schedule id, provided because there will be a chance
+		print(profile['name'])
 
 
 Delete a Preference Profile
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-TODO: narrative
-
-TODO: delete a pref from a profile
+For CCM users wishing to remove a deprecated Preference Profile, the snippet below demonstrates the process to hard delete the profile.
 
 .. code-block:: python
     :caption: How to delete a Preference Profile
     :linenos:
 
+    client.set_profile('default')
+    resp = client.delete_profile('my new profile')
+    assert resp['success']
 
-.. include:: source/src.ccm.rst
+
+Python helper functions
+-----------------------
+
+
+.. automodule:: src.ccm.api
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 
 .. Indices and tables

@@ -21,7 +21,13 @@ class CcmApi(object):
 
 
     def __init__(self, user_id, api_host=None):
-        """When initializing this helper object, provide the `user_id` assigned to you when you were granted access to CCM."""
+        """When initializing this helper object, provide the `user_id` assigned to you when you were granted access to CCM.
+
+        :param user_id: The unique identifier assigned to your user account
+        :type user_id: string
+        :param api_host: Optional string specifying the CCM Server to use.  If not provided, the ``API_HOST`` environment variable will be used.
+        :type api_host: string
+        """
         # TODO: authentication
         self.user_id = user_id
         if api_host is None:
@@ -46,6 +52,11 @@ class CcmApi(object):
 
 
     def get_server_version(self):
+        """Get the version information of the server you are connecting to.
+
+        :return: A dictionary of version information
+        :rtype: dict
+        """
         r = requests.get(self.api_host)
         return {
             "version": "v1.0.0"
@@ -53,21 +64,40 @@ class CcmApi(object):
 
 
     def get_api_host(self):
-        """Get the CCM Server API base endpoint the client is communicating with.  This is useful for confirming if you are pointing to a test or production server."""
+        """Get the CCM Server API base endpoint the client is communicating with.  This is useful for confirming if you are pointing to a test or production server.
+
+        :return: Return the ``api_host`` of the CCM Server
+        :rtype: string
+        """
         return self.api_host
 
 
     def get_current_profile(self):
-        """New users are assigned to the 'default' profile.  Users can add additional preference profiles and switch between them (with other methods of this class).  This function retrieves the currently selected profile."""
+        """New users are assigned to the 'default' profile.  Users can add additional preference profiles and switch between them (with other methods of this class).  This function retrieves the currently selected profile.
+
+        :return: The active Preference Profile's identifier
+        :rtype: string
+        """
         return self.current_profile
 
 
     def get_all_profiles(self):
+        """Retrieve all the profiles in your user account.
+
+        :return: A list of profiles
+        :rtype: list
+        """
         return []
 
 
     def get_user_preferences(self, profile_name='default') -> list:
-        """Retrieve a list of UserPreference objects applicable to the current user."""
+        """Retrieve all the UserPreferences found in the given ``profile_name``
+
+        :param profile_name: The unique identifier issued by the server.
+        :type profile_name: string
+        :return: A Schedule object
+        :rtype: Schedule
+        """
         return []
 
 
@@ -75,6 +105,7 @@ class CcmApi(object):
         """Retrieve a schedule from the API by id.
 
         :param schedule_id: The unique identifier issued by the server.
+        :type schedule_id: string
         :raises Exception: No schedule by that ID.
         :return: A Schedule object
         :rtype: Schedule
@@ -110,12 +141,23 @@ class CcmApi(object):
             raise Exception('No schedule by that ID')
 
 
-    def get_ground_sites(self):
-        """Retrieve a list of the Ground Sites available in the network which the client can request usage of."""
-        return []
-
-
     def create_exact_request(self, norad_id: str, ground_site_id: str, start_timestamp: int, end_timestamp: int):
+        """Helper function for creating a UserPreference Object.
+
+        :param norad_id: The NORAD ID of the Spacecraft for which the Exact Request is being made
+        :type norad_id: string
+        :param ground_site_id: The Ground Site ID for which the Exact Request is being made
+        :type ground_site_id: string
+        :param start_timestamp: Posix timestamp for the start of the Exact Request
+        :type start_timestamp: int
+        :param end_timestamp: Posix timestamp for the end of the Exact Request
+        :type start_timestamp: int
+        :param norad_id: The NORAD ID of the Spacecraft for which the Exact Request is being made
+        :type norad_id: int
+
+        :return: A JSON dictionary which should include ``success``
+        :rtype: dict
+        """
         if norad_id == 'test':
             return {
                 'success': True,
@@ -132,18 +174,33 @@ class CcmApi(object):
 
         :param constraint_type: TruncatedGaussian, Logistic, Decay
         :type constraint_type: UserPreference.ConstraintType
-        :param objective: See UserPreference.Objective
+        :param objective: One of AverageMinutesBetweenContacts, AverageMinutesContactLength, MinimumMinutesContactLength, ContactMinutesPerDay, MaximumMinutesBetweenContacts, ContactCountPerDay, MinimumMinutesBetweenContacts, MaximumCumuBufferFillPercent, FractionHasBand, EpochTimeStart, ExpectedWaitTime, MeanMidpointWithinVisibility, OrbitFrequency, AoiLatency
         :type objective: UserPreference.Objective
         :param weight: A value representing how much emphasis to give to this UserPreference relative to others.
         :type weight: float
-        :param mu: For TruncatedGaussian(, optional)
+        :param mu: Required for ConstraintType.TruncatedGaussian
         :type mu: float
-        :param sigma: For TruncatedGaussian(, optional)
+        :param sigma: Required for ConstraintType.TruncatedGaussian
         :type sigma: float
-        :param min: For TruncatedGaussian(, optional)
+        :param min: Required for ConstraintType.TruncatedGaussian
         :type min: float
-        :param max: For TruncatedGaussian(, optional)
+        :param max: Required for ConstraintType.TruncatedGaussian
         :type max: float
+
+        :param bias: Required for ConstraintType.Logistic
+        :type bias: float
+        :param shape: Required for ConstraintType.Logistic
+        :type shape: float
+
+        :param start: Required for ConstraintType.Decay
+        :type start: float
+        :param decayBegins: Required for ConstraintType.Decay
+        :type decayBegins: float
+        :param lambdaParam: Required for ConstraintType.Decay
+        :type lambdaParam: float
+        :param decayHorizon: Required for ConstraintType.Decay
+        :type decayHorizon: int32
+
         :return: A validated UserPreference object
         :rtype: UserPreference
         """
@@ -158,47 +215,25 @@ class CcmApi(object):
             objective=objective
         )
         return up
-        #     enum Objective {
-        #         AverageMinutesBetweenContacts = 1;
-        #         AverageMinutesContactLength   = 2;
-        #         MinimumMinutesContactLength   = 4;
-        #         ContactMinutesPerDay          = 5;
-        #         MaximumMinutesBetweenContacts = 6;
-        #         ContactCountPerDay            = 7;
-        #         MinimumMinutesBetweenContacts = 8;
-        #         MaximumCumuBufferFillPercent  = 9;
-        #         FractionHasBand               = 10; // <- New objective for the fraction of tasks that should contain the band
-        #         EpochTimeStart                = 11;
-        #         ExpectedWaitTime              = 12;
-        #         MeanMidpointWithinVisibility  = 13;
-        #         OrbitFrequency                = 14;
-        #         AoiLatency                    = 15;
-        #     }
 
         #     optional string label = 5;
-
-        #     optional double start = 10;
-        #     optional double decayBegins = 11;
-        #     optional double lambdaParam = 12;
-        #     optional int32 decayHorizon = 33;
-
-        #     optional double bias = 13;
-        #     optional double shape = 14;
-
-        #     optional int64 start_time = 17;
-        #     optional int64 end_time = 18;
 
         #     optional VisibilityProperty.VisibilityPropertyType vtype = 19;
         #     optional string vtype_value = 20;
         #     optional string vtype_svalue = 21;
-
         #     optional double eventsPerHour = 22;
-        #     optional string unique_id = 23;
         #     repeated string siteIds = 24;
         #     repeated string noradIds = 25;
 
 
-    def add_preference_to_profile(self, profile_name, up: objs.UserPreference):
+    def add_preference_to_profile(self, profile_name, upref: objs.UserPreference):
+        """Add the ``upref`` to the Preference Profile identified as ``profile_name``
+
+        :param profile_name: The unique identifier of the Preference Profile
+        :type profile_name: string
+        :return: A dictionary with ``success`` value
+        :rtype: dict
+        """
         p = self.profiles[profile_name]
         if 'prefs' not in p:
             self.profiles[profile_name]['prefs'] = []
@@ -209,6 +244,13 @@ class CcmApi(object):
 
 
     def create_preference_profile(self, profile_name):
+        """Retrieve a schedule from the API by id.
+
+        :param profile_name: The unique identifier of the Preference Profile
+        :type profile_name: string
+        :return: A dictionary with ``success`` value
+        :rtype: dict
+        """
         if profile_name in self.profiles:
             return {
                 'success': False,
@@ -221,6 +263,13 @@ class CcmApi(object):
 
 
     def set_profile(self, profile_name):
+        """Retrieve a schedule from the API by id.
+
+        :param profile_name: The unique identifier of the Preference Profile
+        :type profile_name: string
+        :return: A dictionary with ``success`` value
+        :rtype: dict
+        """
         if profile_name not in self.profiles:
             return { 'success': False, 'msg': f'Cannot find {profile_name}' }
         self.current_profile = profile_name
@@ -228,6 +277,13 @@ class CcmApi(object):
 
 
     def delete_profile(self, profile_name):
+        """Retrieve a schedule from the API by id.
+
+        :param profile_name: The unique identifier of the Preference Profile
+        :type profile_name: string
+        :return: A dictionary with ``success`` value
+        :rtype: dict
+        """
         if profile_name not in self.profiles:
             return {
                 'success': False,
