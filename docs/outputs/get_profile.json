@@ -1,0 +1,13 @@
+{
+    "name": "my new profile",
+    "prefs": [
+        {
+            "constraintType": "TruncatedGaussian",
+            "max": 20.0,
+            "min": 0.0,
+            "mu": 5.0,
+            "objective": "ContactCountPerDay",
+            "sigma": 2.0
+        }
+    ]
+}
