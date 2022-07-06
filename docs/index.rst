@@ -13,7 +13,7 @@ Introduction
 
 The ATLAS Cognitive Constallation Manager (CCM) is a software system for centralized, real-time management of a space communication network.  CCM is a solution used adopted by a space communication network as the solution for scheduling access to resources.
 
-CCM follows a client / server model.  The ATLAS Network operates the CCM Server software.  The scheduling algorithm that evaluates requests and assigns resources to clients is done server side.  From the client's perspective, the internal operations of the server are not important.  For a deep understanding of how the CCM Server makes scheduling decisions, you may wish to read the "Cognitive Constellation Management, Draft Final Report" prepased by ATLAS Space Operations, June 10, 2022.
+CCM follows a client / server model.  The ATLAS Network operates the CCM Server software.  The scheduling algorithm that evaluates requests and assigns resources to clients is done server side.  From the client's perspective, the internal operations of the server are not important.  For a deep understanding of how the CCM Server makes scheduling decisions, you may wish to read the "Cognitive Constellation Management, Draft Final Report" prepared by ATLAS Space Operations, June 10, 2022.
 
 This guide describes the RESTful API a developer can use to interact with the CCM Server for the purposes of updating their mission parameters and configuration.  
 
@@ -132,8 +132,53 @@ The latest version of CCM supports three mathematical functions or **Objectives*
 #. Decay
 
 
-Setting the Constraint Type
-+++++++++++++++++++++++++++
+Setting the Objective and Constraint Type
++++++++++++++++++++++++++++++++++++++++++
+
+Each User Preference must specify one Objective (the metric you want are concerned with, e.g. contact count per day) and one Constraint Type (mathematical details about our preference for values of the Objective).  Readers should refer to "Cognitive Constellation Management, Draft Final Report" prepared by ATLAS Space Operations, June 10, 2022 for exhaustive details on the Constraint Types and Objectives.
+
+The complete list of supported Objectives is:
+
+* AverageMinutesBetweenContacts
+
+* AverageMinutesContactLength
+
+* MinimumMinutesContactLength
+
+* ContactMinutesPerDay
+
+* MaximumMinutesBetweenContacts
+
+* ContactCountPerDay
+
+* MinimumMinutesBetweenContacts
+
+* MaximumCumuBufferFillPercent
+
+* FractionHasBand
+
+* EpochTimeStart
+
+* ExpectedWaitTime
+
+* MeanMidpointWithinVisibility
+
+* OrbitFrequency
+
+* AoiLatency
+
+
+Each of these is described in more detail in the subsections below.  These shapes describe the value you ascribe to a particular outcome *relative* to the objective.  For example, a User Preference 
+
+
+For each User Preference, you must choose one of 3 Constraint Types:
+
+#. Truncated Gaussian
+
+#. Logistic
+
+#. Decay
+
 
 Truncated Gaussian Preference
 *****************************
@@ -419,6 +464,18 @@ The code snippet below demonstrates the use of polling when retreving
 When the Schedule is generated and available, it could look like the example shown above.  In this minimal example, there are two Tasks for the requesting user.  Both are on the same Spacecraft and same Ground Site.  The particular ``visibilityId`` found in *ATLAS Freedom* will be included for reference.
 
 The resulting schedule printed above includes a ``scheduleRunId`` which is a unique identifier that CCM will assign.  The ``score`` is a numeric value in the range ``[0.0, 1.1]`` representing an overall algorithmic assessment of the quality of the schedule (higher is better).  Lastly, ``tasks`` will contain a list of Scheduled Tasks that were included in the Schedule.
+
+
+Adding Sequences
+----------------
+
+TODO: blah blah
+
+
+AOI Targetting
+--------------
+
+TODO: blah blah
 
 
 Python helper functions
