@@ -5,7 +5,8 @@ import random
 import requests
 import sys
 import time
-
+import uuid
+from google.protobuf.json_format import MessageToDict
 from src.ccm import __version__
 from src import schedule_pb2 as objs
 
@@ -17,7 +18,7 @@ _logger = logging.getLogger(__name__)
 
 
 class CcmApi(object):
-    "CCM API is great"
+    "The CcmApi helper class contains several high level functions for controlling the Schedule Tasks assigned to your satellites.  This library manages the REST API calls and provides the user with discrete actions rather than transactional changes."
 
 
     def __init__(self, user_id, api_host=None):
@@ -54,7 +55,7 @@ class CcmApi(object):
     def get_server_version(self):
         """Get the version information of the server you are connecting to.
 
-        :return: A dictionary of version information
+        :return: A dictionary containing ``version`` identifier
         :rtype: dict
         """
         r = requests.get(self.api_host)
@@ -84,10 +85,41 @@ class CcmApi(object):
     def get_all_profiles(self):
         """Retrieve all the profiles in your user account.
 
-        :return: A list of profiles
+        :return: A list of profiles, as seen in the response in Section `Retrieve All Preference Profiles`_
         :rtype: list
         """
-        return []
+        if self.user_id == 'test':
+            return [ {"name": "default"}, {"name": "my new profile"}, {"name": "recovery_mode"} ]
+        else:
+            return [ { "name": "default" } ]
+
+
+    def get_profile(self, profile_name='default'):
+        """Retrieve a profile from your account which contains all the UserPreference objects in the profile.
+
+        :param profile_name: The unique identifier of the Preference Profile
+        :type profile_name: string
+        
+        :return: A dictionary with Preference Profile details such as those seen in Section `Retrieve A Preference Profile`_
+        :rtype: object
+        """
+        if self.user_id == 'test' and profile_name == "my new profile":
+            tgauss_upref = objs.UserPreference(
+                constraintType=objs.UserPreference.ConstraintType.TruncatedGaussian,
+                objective=objs.UserPreference.Objective.ContactCountPerDay,
+                mu=5,
+                sigma=2,
+                min=0,
+                max=20)
+            tgu = MessageToDict(tgauss_upref, preserving_proto_field_name=True)
+            prefs = [tgu]
+            return {
+                "name": profile_name,
+                "prefs": prefs
+            }
+        else:
+            return {}
+
 
 
     def get_user_preferences(self, profile_name='default') -> list:
@@ -169,7 +201,7 @@ class CcmApi(object):
         }
 
 
-    def generate_user_preference(self, constraint_type: objs.UserPreference.ConstraintType, objective: objs.UserPreference.Objective, **kwargs):
+    def generate_user_preference(self, constraint_type, objective, **kwargs):
         """Helper function for creating a UserPreference Object.
 
         :param constraint_type: TruncatedGaussian, Logistic, Decay
@@ -201,16 +233,30 @@ class CcmApi(object):
         :param decayHorizon: Required for ConstraintType.Decay
         :type decayHorizon: int32
 
-        :return: A validated UserPreference object
+        :return: A validated UserPreference object such as the example in Section `Retrieve All Preference Profiles`_
         :rtype: UserPreference
         """
+        mu = None
+        sigma = None
+        mmin = None
+        mmax = None
         if constraint_type == objs.UserPreference.ConstraintType.TruncatedGaussian:
             for req in ['mu', 'sigma']:
+                mu = float(kwargs['mu'])
+                sigma = float(kwargs['sigma'])
+                if 'min' in kwargs:
+                    mmin = float(kwargs['min'])
+                if 'max' in kwargs:
+                    mmax = float(kwargs['max'])
                 if req not in kwargs:
                     raise Exception(f'Gaussian Requires {req}')
         up = objs.UserPreference(
             userId=self.user_id,
             tier=1,
+            mu=mu,
+            sigma=sigma,
+            min=mmin,
+            max=mmax,
             constraintType=constraint_type,
             objective=objective
         )
@@ -231,13 +277,13 @@ class CcmApi(object):
 
         :param profile_name: The unique identifier of the Preference Profile
         :type profile_name: string
-        :return: A dictionary with ``success`` value
+        :return: A dictionary with ``success`` value (i.e. ``{ "success": True }``)
         :rtype: dict
         """
         p = self.profiles[profile_name]
         if 'prefs' not in p:
             self.profiles[profile_name]['prefs'] = []
-        self.profiles[profile_name]['prefs'].append(up)
+        self.profiles[profile_name]['prefs'].append(upref)
         return {
             'success': True
         }
@@ -273,7 +319,10 @@ class CcmApi(object):
         if profile_name not in self.profiles:
             return { 'success': False, 'msg': f'Cannot find {profile_name}' }
         self.current_profile = profile_name
-        return { 'success': True }
+        return {
+            'success': True,
+            'next_schedule_id': str(uuid.uuid4())
+        }
 
 
     def delete_profile(self, profile_name):
